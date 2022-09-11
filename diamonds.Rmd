@@ -1,0 +1,79 @@
+---
+title: "Diamonds"
+author: "rjhj"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Diamond paradox
+
+How can there be a negative correlation between the quality of the cut of a diamond and its price? This work explains this fascinating and educational puzzle.
+
+Data set
+
+Diamonds is a famous training data set with almost 54,000 observations. It comes with ggplot2, which is a part of tidyverse.
+
+In this work I'll be using tidyverse techniques and philosophies mentioned in the "R for Data Science" book by Hadley Wickham (<https://r4ds.had.co.nz/>).
+
+### 1. Preparation
+
+```{r}
+library(tidyverse)
+```
+
+
+Price of diamonds in this data set is capped at around $18,000. Here are
+the top 3 most valuable for each quality of cut. The numbers are very similar.
+
+```{r}
+diamonds |>
+  group_by(cut) |>
+  slice_max(order_by = price, n = 3)
+```
+
+This ceiling can hide the real connection between the variables, so in analysis
+I'm going filter out some of the biggest diamonds (>= 1.75). Ceiling will still
+affect the results, but at least a little bit less.
+
+```{r}
+d <- diamonds |>
+  filter(carat < 1.75)
+
+paste("Only", nrow(diamonds) - nrow(d), "rows were removed.")
+
+```
+
+
+```{r}
+d |>
+  group_by(cut) |>
+  slice_max(order_by = price, n = 3)
+```
+
+
+## 2. The paradox
+
+How does the quality of the cut affect the price of diamonds?
+
+```{r}
+ggplot(d, aes(price, after_stat(density), colour = cut)) +
+  geom_freqpoly(binwidth = 500, size = 2) +
+  labs(title = "Surpirising result: fair diamonds are more valuable than ideal",
+       caption = "Density plot: the area under each curve is one.")
+```
+
+
+```{r}
+ggplot(d, mapping = aes(x = price))+
+  geom_boxplot(aes(y = cut)) +
+  labs(title = "Another plot showing that fair diamonds are more valuable than the ideal")
+```
+
+
+
+
+
