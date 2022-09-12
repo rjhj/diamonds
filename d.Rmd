@@ -1,0 +1,213 @@
+---
+title: "Diamonds"
+author: "rjhj"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Diamond paradox
+
+How can there be a negative correlation between the **quality of the cut** and the **price** of a diamond? This work describes this fascinating and educational puzzle.
+
+Diamonds is a famous training data set with almost 54,000 round diamonds. It comes with ggplot2, which is a part of tidyverse.
+
+In this work I'll be using tidyverse techniques and philosophies mentioned in the "R for Data Science" book by Hadley Wickham (<https://r4ds.had.co.nz/>).
+
+## 1. Preparation
+
+```{r echo=TRUE}
+library(tidyverse)
+library(modelr)
+library(knitr)
+
+cut_colors = c("#C76E32", "#A8A846", "#46A846",
+               "#3584B8", "#555599")
+```
+
+Price of diamonds in this data set is capped at around \$18,800. Here are the top 2 most valuable for each quality of cut. The numbers are very similar.
+
+```{r}
+diamonds |>
+  group_by(cut) |>
+  slice_max(order_by = price, n = 2) |>
+  kable()
+```
+
+This ceiling can hide the real connection between the variables, so to lessen that effect I'm going to filter out those diamonds that are larger or equal to 1.75 Ct.
+
+```{r}
+d <- diamonds |>
+  filter(carat < 1.75)
+
+paste("Only", nrow(diamonds) - nrow(d), "rows were removed.")
+
+```
+
+The numbers are still pretty similar with higher quality diamonds, but we don't want to filter out too much of the data.
+
+```{r}
+d |>
+  group_by(cut) |>
+  slice_max(order_by = price, n = 2) |>
+  kable()
+```
+
+## 2. Paradox
+
+How does the quality of the cut affect the price of diamonds?
+
+```{r}
+ggplot(d, aes(price, after_stat(density), colour = cut)) +
+  geom_freqpoly(binwidth = 500, size = 2) +
+  scale_color_manual(values = cut_colors) +
+  labs(title = "Surprise: Lower quality cut diamonds are more valuable?",
+       caption = "The area under each curve is one.")
+```
+
+```{r}
+ggplot(d, mapping = aes(x = price, fill = cut))+
+  geom_boxplot(aes(y = cut), alpha = 0.7) +
+  scale_fill_manual(values = cut_colors) +
+  labs(title = "Another plot showing the same strange result")
+```
+
+## 3. Explanation
+
+Lower quality cuts being more valuable can be explained by two other correlations.
+
+```{r}
+ggplot(d, aes(x = carat, y = after_stat(density))) +
+  geom_freqpoly(aes(colour = cut), size = 2, bins = 20) +
+  scale_color_manual(values = cut_colors) +
+  labs(title = "Explanation part 1:",
+       subtitle= "Diamonds with lower quality cuts seem to be bigger",
+       caption = "The area under each curve is one.")
+```
+
+```{r}
+ggplot(d, aes(x = carat, y = price)) + 
+  geom_boxplot(aes(group = cut_width(carat, 0.1)), alpha = 0.5) +
+  labs(title = "Explanation part 2:",
+       subtitle= "Size and price are strongly correlated",
+       caption = "")
+```
+
+## 4. Relationships between size and price
+
+Let's explore the relationship between the carat and the price more.
+
+```{r}
+ggplot(d, aes(carat, price)) +
+  geom_bin2d() +
+  scale_fill_continuous(type = "viridis") +
+  labs(title = "Relationship seems to be exponential")
+```
+
+```{r}
+ggplot(d, aes(carat, price)) +
+  geom_bin2d() +
+  scale_fill_continuous(type = "viridis") +
+  geom_smooth(formula = y ~ x, method = "lm", color = "white") +
+  scale_x_log10() + 
+  scale_y_log10() +
+  labs(title = "Logarithmic scale lines the data well")
+```
+
+```{r}
+model <- lm(log(price) ~ log(carat), d) 
+paste0("Linear model for unmodified data gives R-squared of ",
+      round(summary(lm(price ~ carat, d))$r.squared, 2),
+      ", but the logarithmic data gives ",
+      round(summary(model)$r.squared, 2),
+      ".")
+```
+
+## 5. Adding residuals
+
+Let's add a new column for residuals.
+
+```{r}
+d |>
+  lm(model, data = _) |>
+  modelr::add_residuals(d, model = _) -> d
+```
+
+Residuals here tell the difference between what the linear regression model predicted and its actual value.
+
+```{r}
+slope = summary(model)$coefficients[2]
+intercept = summary(model)$coefficients[1]
+paste0("The formula given by linear model is ",
+       round(slope, 2),
+       " * log(carat) + ",
+       round(intercept, 2),
+       " == log(price). It can explain ",
+       round(summary(model)$r.squared[1]*100),
+       " % of the variation of a diamond's price.")
+```
+
+Formula works well when residuals are close to zero. But especially for those with either very bad or very good quality of cut and color the predictions are much worse.
+
+```{r}
+d |>
+  slice_min(abs(resid), n = 3, with_ties = FALSE) -> low_resids
+
+d |>
+  slice_max(abs(resid), n = 3, with_ties = FALSE) -> high_resids
+
+different_resids <- bind_rows(low_resids, high_resids) |>
+  arrange(abs(resid)) |>
+  mutate(price_predicted_by_size = round(exp(slope * log(carat) + intercept))) |>
+  mutate(resid = round(resid, 5)) |>
+  select(carat:clarity, resid, price, price_predicted_by_size)
+
+kable(different_resids)
+  
+```
+
+For the bottom three diamonds the residual are very high, so the carat does poor job explaining the price.
+
+## 6. Solving the paradox
+
+Residuals represents the price where the effect of diamond's size has been removed. That's why we can now see better the actual impact that quality of cut has to the price. Same is true for the color of the diamond, but to keep things simple, I won't show those correlations.
+
+This table shows the impact of some residuals and sizes to the price.
+
+```{r}
+tibble(residual = rep(c(1, 0.5, 0, -0.5, -1),2),
+       carat = c(rep(0.5, 5), rep(1,5))) |>
+  mutate(price =
+           round(
+           exp(residual) * #residual
+           exp(slope * log(carat) + intercept) #size
+           )) |>
+  kable()
+```
+
+
+Let's look at the original mystery plots where instead of comparing cut to price, we do the comparison against residuals.
+
+```{r}
+ggplot(d, aes(resid, after_stat(density), colour = cut)) +
+  geom_freqpoly(bins = 30, size = 2) +
+  scale_color_manual(values = cut_colors) +
+  labs(title = "Paradox solved: Removing the size shows the true impact of the cut",
+       subtitle = "Better the cut, higher the price",
+       caption = "The area under each curve is one.",
+       x = "residual of price w/o size")
+```
+
+```{r}
+ggplot(d, mapping = aes(x = resid, fill = cut))+
+  geom_boxplot(aes(y = cut), alpha = 0.7) +
+  scale_fill_manual(values = cut_colors) +
+  labs(title = "Another plot showing that better cut increases value")
+```
+
+## 7. Conlusion
+
+Diamonds is a classic of data analysis for a reason. It shows how superficial analysis can lead to a completely wrong conclusion.
