@@ -23,11 +23,12 @@ In this work I'll be using tidyverse techniques and philosophies mentioned in th
 
 ```{r}
 library(tidyverse)
+
+cut_colors = c("#C76E32", "#A8A846", "#46A846",
+               "#3584B8", "#555599")
 ```
 
-
-Price of diamonds in this data set is capped at around $18,000. Here are
-the top 3 most valuable for each quality of cut. The numbers are very similar.
+Price of diamonds in this data set is capped at around \$18,000. Here are the top 3 most valuable for each quality of cut. The numbers are very similar.
 
 ```{r}
 diamonds |>
@@ -35,9 +36,7 @@ diamonds |>
   slice_max(order_by = price, n = 3)
 ```
 
-This ceiling can hide the real connection between the variables, so in analysis
-I'm going filter out some of the biggest diamonds (>= 1.75). Ceiling will still
-affect the results, but at least a little bit less.
+This ceiling can hide the real connection between the variables, so in analysis I'm going filter out some of the biggest diamonds (\>= 1.75). Ceiling will still affect the results, but at least a little bit less.
 
 ```{r}
 d <- diamonds |>
@@ -47,13 +46,11 @@ paste("Only", nrow(diamonds) - nrow(d), "rows were removed.")
 
 ```
 
-
 ```{r}
 d |>
   group_by(cut) |>
   slice_max(order_by = price, n = 3)
 ```
-
 
 ## 2. The paradox
 
@@ -62,18 +59,12 @@ How does the quality of the cut affect the price of diamonds?
 ```{r}
 ggplot(d, aes(price, after_stat(density), colour = cut)) +
   geom_freqpoly(binwidth = 500, size = 2) +
-  labs(title = "Surpirising result: fair diamonds are more valuable than ideal",
-       caption = "Density plot: the area under each curve is one.")
-```
+  scale_color_manual(values = cut_colors) +
+  labs(title = "Lower quality cut diamonds are more valuable?",
+       caption = "The area under each curve is one.")
 
-
-```{r}
-ggplot(d, mapping = aes(x = price))+
-  geom_boxplot(aes(y = cut)) +
+ggplot(d, mapping = aes(x = price, fill = cut))+
+  geom_boxplot(aes(y = cut), alpha = 0.7) +
+  scale_fill_manual(values = cut_colors) +
   labs(title = "Another plot showing that fair diamonds are more valuable than the ideal")
 ```
-
-
-
-
-
