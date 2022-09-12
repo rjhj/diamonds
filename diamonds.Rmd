@@ -149,22 +149,24 @@ paste0("The formula given by linear model gives is ",
        round(summary(model)$r.squared[1]*100),
        " % of the variation in a diamond's price.")
 ```
-The formula works very well to the diamonds where residuals are close to zero, for example, to this one:
+Here is a demonstration that shows that the formula works well when the residuals are low.
 ```{r}
 d |>
-  slice_min(abs(resid)) -> low_resid
-low_resid
+  slice_min(abs(resid), n = 3, with_ties = FALSE) -> low_resids
+
+d |>
+  slice_max(abs(resid), n = 3, with_ties = FALSE) -> high_resids
+
+different_resids <- bind_rows(low_resids, high_resids) |>
+  arrange(abs(resid)) |>
+  mutate(predicted_price = round(exp(slope * log(carat) + intercept))) |>
+  mutate(resid = round(resid, 5)) |>
+  select(carat:clarity, resid, price, predicted_price)
+
+different_resids
+  
 ```
-Testing the formula:
 
-```{r}
-predicted <- exp(slope * log(low_resid$carat) + intercept)
-
-paste("Precited vs actual price:",
-       round(exp(slope * log(low_resid$carat) + intercept), 2),
-       "vs",
-       low_resid$price)
-```
-
+For the lower three, the carat explain quite little of their price.
 
 
