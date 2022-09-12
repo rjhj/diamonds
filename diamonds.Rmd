@@ -52,7 +52,7 @@ d |>
   slice_max(order_by = price, n = 3)
 ```
 
-## 2. The paradox
+## 2. Paradox
 
 How does the quality of the cut affect the price of diamonds?
 
@@ -60,11 +60,38 @@ How does the quality of the cut affect the price of diamonds?
 ggplot(d, aes(price, after_stat(density), colour = cut)) +
   geom_freqpoly(binwidth = 500, size = 2) +
   scale_color_manual(values = cut_colors) +
-  labs(title = "Lower quality cut diamonds are more valuable?",
+  labs(title = "Surprise: Lower quality cut diamonds are more valuable?",
        caption = "The area under each curve is one.")
+```
 
+```{r}
 ggplot(d, mapping = aes(x = price, fill = cut))+
   geom_boxplot(aes(y = cut), alpha = 0.7) +
   scale_fill_manual(values = cut_colors) +
   labs(title = "Another plot showing that fair diamonds are more valuable than the ideal")
 ```
+
+## 3. Explanation
+
+Lower quality cuts being more valuable can be explained by two other correlations.
+
+```{r}
+ggplot(d, aes(x = carat, y = after_stat(density))) +
+  geom_freqpoly(aes(colour = cut), size = 2, bins = 20) +
+  scale_color_manual(values = cut_colors) +
+  labs(title = "Explanation 1:",
+       subtitle= "Diamonds with lower quality cuts seem to be bigger",
+       caption = "The area under each curve is one.")
+```
+
+
+```{r}
+ggplot(d, aes(x = carat, y = price)) + 
+  geom_boxplot(aes(group = cut_width(carat, 0.1))) +
+  labs(title = "Explanation 2:",
+       subtitle= "Size and price are strongly correlated",
+       caption = "")
+```
+
+
+
