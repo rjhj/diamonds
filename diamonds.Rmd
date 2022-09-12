@@ -84,14 +84,41 @@ ggplot(d, aes(x = carat, y = after_stat(density))) +
        caption = "The area under each curve is one.")
 ```
 
-
 ```{r}
 ggplot(d, aes(x = carat, y = price)) + 
-  geom_boxplot(aes(group = cut_width(carat, 0.1))) +
+  geom_boxplot(aes(group = cut_width(carat, 0.1)), alpha = 0.5) +
   labs(title = "Explanation 2:",
        subtitle= "Size and price are strongly correlated",
        caption = "")
 ```
 
+Let's explore the relationship between carat and price more.
 
+## 4.Relationships between size and price
+
+```{r}
+ggplot(d, aes(carat, price)) +
+  geom_bin2d() +
+  scale_fill_continuous(type = "viridis") +
+  labs(title = "Relationship seems to be exponential")
+```
+
+```{r}
+ggplot(d, aes(carat, price)) +
+  geom_bin2d() +
+  scale_fill_continuous(type = "viridis") +
+  scale_x_log10() + 
+  scale_y_log10() +
+  labs(title = "Logarithmic scale fits the data well")
+```
+
+r^2^:
+
+```{r}
+paste0("Trying to fit linear model to the unmodified data gives R-squared of ",
+      round(summary(lm(price ~ carat, d))$r.squared, 2),
+      ", but the logarithmic data gives ",
+      round(summary(lm(log2(price) ~ log2(carat), d))$r.squared, 2),
+      ".")
+```
 
