@@ -107,6 +107,7 @@ ggplot(d, aes(carat, price)) +
 ggplot(d, aes(carat, price)) +
   geom_bin2d() +
   scale_fill_continuous(type = "viridis") +
+  geom_smooth(formula = y ~ x, method = "lm", color = "white") +
   scale_x_log10() + 
   scale_y_log10() +
   labs(title = "Logarithmic scale fits the data well")
@@ -115,10 +116,34 @@ ggplot(d, aes(carat, price)) +
 r^2^:
 
 ```{r}
+model <- lm(log(price) ~ log(carat), d) 
 paste0("Trying to fit linear model to the unmodified data gives R-squared of ",
       round(summary(lm(price ~ carat, d))$r.squared, 2),
       ", but the logarithmic data gives ",
-      round(summary(lm(log2(price) ~ log2(carat), d))$r.squared, 2),
+      round(summary(model)$r.squared, 2),
       ".")
 ```
+
+## 5. Removing the effect of size
+
+Let's add a new column for residuals.
+
+```{r}
+d |>
+  lm(model, data = _) |>
+  add_residuals(d, model = _) |>
+  mutate(resid = exp(resid)) -> d
+```
+
+Residuals here tell the difference between what the linear regression model
+predicted and its actual value.
+
+```{r}
+paste0("The formula that linear model gives is ",
+       round(summary(model)$coefficients[2], 2),
+       " * log(carat) + ",
+       round(summary(model)$coefficients[1], 2),
+       " = log(price)")
+```
+
 
