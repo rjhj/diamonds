@@ -132,18 +132,39 @@ Let's add a new column for residuals.
 d |>
   lm(model, data = _) |>
   add_residuals(d, model = _) |>
-  mutate(resid = exp(resid)) -> d
+  mutate(resid_exp = exp(resid)) -> d
 ```
 
 Residuals here tell the difference between what the linear regression model
 predicted and its actual value.
 
 ```{r}
-paste0("The formula that linear model gives is ",
-       round(summary(model)$coefficients[2], 2),
+slope = summary(model)$coefficients[2]
+intercept = summary(model)$coefficients[1]
+paste0("The formula given by linear model gives is ",
+       round(slope, 2),
        " * log(carat) + ",
-       round(summary(model)$coefficients[1], 2),
-       " = log(price)")
+       round(intercept, 2),
+       " = log(price). It can explain ",
+       round(summary(model)$r.squared[1]*100),
+       " % of the variation in a diamond's price.")
 ```
+The formula works very well to the diamonds where residuals are close to zero, for example, to this one:
+```{r}
+d |>
+  slice_min(abs(resid)) -> low_resid
+low_resid
+```
+Testing the formula:
+
+```{r}
+predicted <- exp(slope * log(low_resid$carat) + intercept)
+
+paste("Precited vs actual price:",
+       round(exp(slope * log(low_resid$carat) + intercept), 2),
+       "vs",
+       low_resid$price)
+```
+
 
 
