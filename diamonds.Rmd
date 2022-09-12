@@ -64,6 +64,7 @@ ggplot(d, aes(price, after_stat(density), colour = cut)) +
        caption = "The area under each curve is one.")
 ```
 
+
 ```{r}
 ggplot(d, mapping = aes(x = price, fill = cut))+
   geom_boxplot(aes(y = cut), alpha = 0.7) +
@@ -124,15 +125,14 @@ paste0("Trying to fit linear model to the unmodified data gives R-squared of ",
       ".")
 ```
 
-## 5. Removing the effect of size
+## 5. Addin residuals
 
 Let's add a new column for residuals.
 
 ```{r}
 d |>
   lm(model, data = _) |>
-  add_residuals(d, model = _) |>
-  mutate(resid_exp = exp(resid)) -> d
+  add_residuals(d, model = _) -> d
 ```
 
 Residuals here tell the difference between what the linear regression model
@@ -167,6 +167,27 @@ different_resids
   
 ```
 
-For the lower three, the carat explain quite little of their price.
+For the bottom three diamonds the carat explain quite little of their price. For the top three it does great job.
+
+## 6. Solving the paradox
+
+Residuals represents the price where the effect of diamond's size has been removed.
+
+Let's look at the original mystery plots where instead of comparing cut to price, 
+we do the comparison against residuals.
+
+```{r}
+ggplot(d, aes(resid, after_stat(density), colour = cut)) +
+  geom_freqpoly(bins = 30, size = 2) +
+  scale_color_manual(values = cut_colors) +
+  labs(title = "Paradox solved: Better cuts are more valuable",
+       caption = "The area under each curve is one.")
+```
 
 
+```{r}
+ggplot(d, mapping = aes(x = resid, fill = cut))+
+  geom_boxplot(aes(y = cut), alpha = 0.7) +
+  scale_fill_manual(values = cut_colors) +
+  labs(title = "Another plot showing the same thing")
+```
