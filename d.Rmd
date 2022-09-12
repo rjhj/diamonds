@@ -1,6 +1,6 @@
 ---
-title: "Diamonds"
-author: "rjhj"
+title: "Diamond paradox"
+author: "github.com/rjhj"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -9,17 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Diamond paradox
 
 How can there be a negative correlation between the **quality of the cut** and the **price** of a diamond? This work describes this fascinating and educational puzzle.
 
 Diamonds is a famous training data set with almost 54,000 round diamonds. It comes with ggplot2, which is a part of tidyverse.
 
-In this work I'll be using tidyverse techniques and philosophies mentioned in the "R for Data Science" book by Hadley Wickham (<https://r4ds.had.co.nz/>).
-
 ## 1. Preparation
 
-```{r echo=TRUE}
+```{r message=FALSE}
 library(tidyverse)
 library(modelr)
 library(knitr)
@@ -28,16 +25,17 @@ cut_colors = c("#C76E32", "#A8A846", "#46A846",
                "#3584B8", "#555599")
 ```
 
-Price of diamonds in this data set is capped at around \$18,800. Here are the top 2 most valuable for each quality of cut. The numbers are very similar.
+
+Price of diamonds in this data set is capped at around \$18,800. Here are the top 2 most valuable ones for each quality of cut.
 
 ```{r}
 diamonds |>
   group_by(cut) |>
   slice_max(order_by = price, n = 2) |>
-  kable()
+  kable(caption = "Top diamond prices are very similar")
 ```
 
-This ceiling can hide the real connection between the variables, so to lessen that effect I'm going to filter out those diamonds that are larger or equal to 1.75 Ct.
+This price ceiling can hide the real connection between the variables, so to lessen that effect I'm going to filter out those diamonds that are larger or equal to 1.75 Ct. The exact number was selected arbitrarily.
 
 ```{r}
 d <- diamonds |>
@@ -47,13 +45,12 @@ paste("Only", nrow(diamonds) - nrow(d), "rows were removed.")
 
 ```
 
-The numbers are still pretty similar with higher quality diamonds, but we don't want to filter out too much of the data.
-
 ```{r}
 d |>
   group_by(cut) |>
   slice_max(order_by = price, n = 2) |>
-  kable()
+  kable(caption = "Prices are still pretty similar for higher quality diamonds,
+        but I don't want to filter too much")
 ```
 
 ## 2. Paradox
@@ -92,19 +89,16 @@ ggplot(d, aes(x = carat, y = after_stat(density))) +
 ggplot(d, aes(x = carat, y = price)) + 
   geom_boxplot(aes(group = cut_width(carat, 0.1)), alpha = 0.5) +
   labs(title = "Explanation part 2:",
-       subtitle= "Size and price are strongly correlated",
-       caption = "")
+       subtitle= "Size and price are strongly correlated")
 ```
 
-## 4. Relationships between size and price
-
-Let's explore the relationship between the carat and the price more.
+## 4. Relationships between size and price.
 
 ```{r}
 ggplot(d, aes(carat, price)) +
   geom_bin2d() +
   scale_fill_continuous(type = "viridis") +
-  labs(title = "Relationship seems to be exponential")
+  labs(title = "Relationship looks exponential")
 ```
 
 ```{r}
@@ -136,7 +130,8 @@ d |>
   modelr::add_residuals(d, model = _) -> d
 ```
 
-Residuals here tell the difference between what the linear regression model predicted and its actual value.
+
+Residuals can be used to represent and calculate the difference between what the linear regression model predicts for price (based on size only) and its actual value.
 
 ```{r}
 slope = summary(model)$coefficients[2]
@@ -147,10 +142,10 @@ paste0("The formula given by linear model is ",
        round(intercept, 2),
        " == log(price). It can explain ",
        round(summary(model)$r.squared[1]*100),
-       " % of the variation of a diamond's price.")
+       " % of the price variation.")
 ```
 
-Formula works well when residuals are close to zero. But especially for those with either very bad or very good quality of cut and color the predictions are much worse.
+Formula works well when residuals are close to zero. But especially for those with either very bad or very good quality of cuts and colors the predictions are much worse.
 
 ```{r}
 d |>
@@ -165,7 +160,7 @@ different_resids <- bind_rows(low_resids, high_resids) |>
   mutate(resid = round(resid, 5)) |>
   select(carat:clarity, resid, price, price_predicted_by_size)
 
-kable(different_resids)
+kable(different_resids, caption = "Residuals closest to zero and farthest from it")
   
 ```
 
@@ -173,9 +168,7 @@ For the bottom three diamonds the residual are very high, so the carat does poor
 
 ## 6. Solving the paradox
 
-Residuals represents the price where the effect of diamond's size has been removed. That's why we can now see better the actual impact that quality of cut has to the price. Same is true for the color of the diamond, but to keep things simple, I won't show those correlations.
-
-This table shows the impact of some residuals and sizes to the price.
+Residuals represents the price where the effect of diamond's size has been removed. 
 
 ```{r}
 tibble(residual = rep(c(1, 0.5, 0, -0.5, -1),2),
@@ -185,11 +178,10 @@ tibble(residual = rep(c(1, 0.5, 0, -0.5, -1),2),
            exp(residual) * #residual
            exp(slope * log(carat) + intercept) #size
            )) |>
-  kable()
+  kable(caption = "Examples how residuals relate to price")
 ```
 
-
-Let's look at the original mystery plots where instead of comparing cut to price, we do the comparison against residuals.
+Let's look at the original mystery plots where instead of comparing cut to price we do the comparison against residuals.
 
 ```{r}
 ggplot(d, aes(resid, after_stat(density), colour = cut)) +
@@ -210,4 +202,4 @@ ggplot(d, mapping = aes(x = resid, fill = cut))+
 
 ## 7. Conlusion
 
-Diamonds is a classic of data analysis for a reason. It shows how superficial analysis can lead to a completely wrong conclusion.
+Diamonds is a classic of data analysis for a reason. It shows how superficial analysis can lead to a completely opposite conclusion.
