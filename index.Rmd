@@ -1,14 +1,17 @@
 ---
 title: "Diamond paradox"
-author: "github.com/rjhj"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  html_document:
+    toc: true # table of content true
+    toc_depth: 2  # upto three depths of headings (specified by #, ## and ###)
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
 
 How can there be a negative correlation between the **quality of the cut** and the **price** of a diamond? This work describes this fascinating and educational puzzle.
 
@@ -24,7 +27,6 @@ library(knitr)
 cut_colors = c("#C76E32", "#A8A846", "#46A846",
                "#3584B8", "#555599")
 ```
-
 
 Price of diamonds in this data set is capped at around \$18,800. Here are the top 2 most valuable ones for each quality of cut.
 
@@ -130,7 +132,6 @@ d |>
   modelr::add_residuals(d, model = _) -> d
 ```
 
-
 Residuals can be used to represent and calculate the difference between what the linear regression model predicts for price (based on size only) and its actual value.
 
 ```{r}
@@ -168,7 +169,7 @@ For the bottom three diamonds the residual are very high, so the carat does poor
 
 ## 6. Solving the paradox
 
-Residuals represents the price where the effect of diamond's size has been removed. 
+Residuals represents the price where the effect of diamond's size has been removed.
 
 ```{r}
 tibble(residual = rep(c(1, 0.5, 0, -0.5, -1),2),
@@ -202,4 +203,6 @@ ggplot(d, mapping = aes(x = resid, fill = cut))+
 
 ## 7. Conlusion
 
-Diamonds is a classic of data analysis for a reason. It shows how superficial analysis can lead to a completely opposite conclusion.
+Diamonds is a classic of data analysis for a reason. It shows how a superficial analysis can lead to a completely opposite conclusion.
+
+
