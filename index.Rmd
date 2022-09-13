@@ -201,8 +201,12 @@ ggplot(d, mapping = aes(x = resid, fill = cut))+
   labs(title = "Another plot showing that better cut increases value")
 ```
 
-## 7. Conlusion
+## 7. Conclusion
 
 Diamonds is a classic of data analysis for a reason. It shows how a superficial analysis can lead to a completely opposite conclusion.
+
+Initially it looks like lower quality cut diamonds are more valuable. Actual effect of the quality of cut on price is masked by two other correlations: lower quality cuts being larger and high correlation between the size and the price.
+
+One way to remove this mask is to analyze the residuals where the effect of size on price has been removed. This more thorough analysis revealed that higher quality of cut is indeed correlated with higher price.
 
 
