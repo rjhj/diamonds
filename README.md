@@ -1,3 +1,6 @@
-# diamonds
-## Small analysis of the famous diamonds dataset
-### Link to kaggle.com: coming soon
+# Diamond paradox
+
+A small analysis of the famous diamonds data set.
+
+Hosted here:
+https://rjhj.github.io/diamonds/
