@@ -1,6 +1,6 @@
 ---
 title: "Diamond paradox"
-date: "`r Sys.Date()`"
+date: "2022-09-13"
 output:
   html_document:
     toc: true # table of content true
@@ -100,7 +100,7 @@ ggplot(d, aes(x = carat, y = price)) +
 ggplot(d, aes(carat, price)) +
   geom_bin2d() +
   scale_fill_continuous(type = "viridis") +
-  labs(title = "Relationship looks exponential")
+  labs(title = "Price starts to go up rapidly after 1 Ct")
 ```
 
 ```{r}
